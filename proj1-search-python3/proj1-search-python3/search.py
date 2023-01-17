@@ -97,38 +97,62 @@ def depthFirstSearch(problem):
     while not stack.isEmpty():
         current = stack.pop()
         # Check for goal
-        if problem.isGoalState(current[0]):
-            return current[1]
-        visited.append(current[0])
-        # Only get unvisited successors
-        for successor in problem.getSuccessors(current[0]):
-            if successor[0] not in visited:
-                # Add new path motion to old path
-                stack.push((successor[0], current[1] + [successor[1]]))
-    util.raiseNotDefined()
+        if not current[0] in visited:
+            if problem.isGoalState(current[0]):
+                return current[1]
+            visited.append(current[0])
+            # Only add unvisited successors to stack
+            for successor in problem.getSuccessors(current[0]):
+                if successor[0] not in visited:
+                    # Add new path motion to old path
+                    stack.push((successor[0], current[1] + [successor[1]]))
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
+    # No path if start is goal
     if problem.isGoalState(problem.getStartState()):
         return []
     visited = []
     queue = util.Queue()
-    queue.push((problem.getStartState(), []))
+    # Start at start state
+    queue.push((problem.getStartState(), [], 0))
 
     while not queue.isEmpty():
         current = queue.pop()
-        if problem.isGoalState(current[0]):
-            return current[1]
-        visited.append(current[0])
-        for successor in problem.getSuccessors(current[0]):
-            if successor[0] not in visited:
-                queue.push((successor[0], current[1] + [successor[1]]))
-    util.raiseNotDefined()
+        # Check for goal
+        if not current[0] in visited:
+            if problem.isGoalState(current[0]):
+                return current[1]
+            visited.append(current[0])
+            # Only add unvisited successors to queue
+            for successor in problem.getSuccessors(current[0]):
+                if successor[0] not in visited:
+                    # Add new motion to old path
+                    queue.push((successor[0], current[1] + [successor[1]], successor[2]))
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # No path if start is goal
+    if problem.isGoalState(problem.getStartState()):
+        return []
+    visited = []
+    priorityQueue = util.PriorityQueue()
+    # Start at start state
+    start = problem.getStartState()
+    priorityQueue.push((problem.getStartState(), [], 0), 0)
+
+    while not priorityQueue.isEmpty():
+        current = priorityQueue.pop()
+        if not current[0] in visited:
+            # Check for goal
+            if problem.isGoalState(current[0]):
+                return current[1]
+            visited.append(current[0])
+            # Only add unvisited successors to queue
+            for successor in problem.getSuccessors(current[0]):
+                if successor not in visited:
+                    # Add new motion to old path and old cost to new cost
+                    priorityQueue.push((successor[0], current[1] + [successor[1]], current[2] + successor[2]), current[2] + successor[2])
 
 def nullHeuristic(state, problem=None):
     """
@@ -139,8 +163,28 @@ def nullHeuristic(state, problem=None):
 
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    # No path if start is goal
+    if problem.isGoalState(problem.getStartState()):
+        return []
+    visited = []
+    priorityQueue = util.PriorityQueue()
+    # Start at start state
+    start = problem.getStartState()
+    priorityQueue.push((problem.getStartState(), [], 0), 0)
+
+    while not priorityQueue.isEmpty():
+        current = priorityQueue.pop()
+        if not current[0] in visited:
+            # Check for goal
+            if problem.isGoalState(current[0]):
+                return current[1]
+            visited.append(current[0])
+            # Only add unvisited successors to queue
+            for successor in problem.getSuccessors(current[0]):
+                if successor not in visited:
+                    # Add new motion to old path and old cost to new cost
+                    newCost = current[2] + successor[2] + heuristic(successor[0], problem)
+                    priorityQueue.push((successor[0], current[1] + [successor[1]], current[2] + successor[2]), newCost)
 
 
 # Abbreviations
