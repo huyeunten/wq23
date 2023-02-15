@@ -71,7 +71,6 @@ class ReflexAgent(Agent):
         newPos = successorGameState.getPacmanPosition()
         newFood = successorGameState.getFood().asList()
         newGhostStates = successorGameState.getGhostStates()
-        newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
         score = successorGameState.getScore()
         
@@ -80,7 +79,7 @@ class ReflexAgent(Agent):
             ghostDist = util.manhattanDistance(ghostPos, newPos)
             scaredTime = ghost.scaredTimer
             # be afraid (not scared, close ghost)
-            if scaredTime < 2 and ghostDist < 3:
+            if scaredTime < 2 and ghostDist < 2:
                 return -9999
             # don't be afraid (ghosts are scared, location doesn't matter)
             if scaredTime >= 2:
@@ -177,8 +176,10 @@ class MinimaxAgent(MultiAgentSearchAgent):
             return (self.evaluationFunction(gameState), "Stop")
         
         agentsNum = gameState.getNumAgents()
+        # reset agent count after last agent
         if agentIndex == agentsNum:
             agentIndex = 0
+        # move to next depth if last agent
         elif agentIndex == agentsNum - 1:
             depth += 1
 
@@ -198,6 +199,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         Returns the minimax action using self.depth and self.evaluationFunction
         """
     
+        # same as minimax agent but start with very small alpha and very large beta
         return self.minimax(gameState, 0, 0, -9999, 9999)[1]
 
     def findMax(self, gameState, agentIndex, depth, alpha, beta):
@@ -251,18 +253,95 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         All ghosts should be modeled as choosing uniformly at random from their
         legal moves.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.expectimax(gameState, 0, 0)[1]
+
+    def findMax(self, gameState, agentIndex, depth):
+        actions = gameState.getLegalActions(agentIndex)
+        result = []
+        for action in actions:
+            successorState = gameState.generateSuccessor(agentIndex, action)
+            result.append((self.expectimax(successorState, agentIndex + 1, depth)[0], action)) 
+        return max(result)
+    
+    def findRandom(self, gameState, agentIndex, depth):
+        actions = gameState.getLegalActions(agentIndex)
+        result = []
+        total = 0
+        for action in actions:
+            successorState = gameState.generateSuccessor(agentIndex, action)
+            res = self.expectimax(successorState, agentIndex + 1, depth)[0]
+            total += res
+            result.append((res, action))
+        return (total / len(result), )
+    
+    def expectimax(self, gameState, agentIndex, depth):
+        if gameState.isWin() or gameState.isLose() or depth == self.depth:
+            return (self.evaluationFunction(gameState), "Stop")
+        
+        agentsNum = gameState.getNumAgents()
+        if agentIndex == agentsNum:
+            agentIndex = 0
+        elif agentIndex == agentsNum - 1:
+            depth += 1
+
+        if agentIndex == 0:
+            return self.findMax(gameState, agentIndex, depth)
+        else:
+            return self.findRandom(gameState, agentIndex, depth)
+
 
 def betterEvaluationFunction(currentGameState):
     """
     Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
     evaluation function (question 5).
 
-    DESCRIPTION: <write something here so we know what you did>
+    DESCRIPTION: My better evaluation function is mostly the same as the
+    first one.
+
+    I considered the ghost distance and whether or not the ghost is scared.
+    If there is little remaining scare time and the ghost is nearby, then a
+    large negative value is immediately returned. If there is a lot of 
+    remaining scared time, then a positive value is added to the score.
+
+    For food, the food with the minimum distance is found. The reciprocal of
+    that food distance is added to the score. The total number of food is also
+    subtracted, so that Pacman chooses states with less remaining food.
+
+    The reciprocal number of capsules is a new addition that adds a small
+    value for the number of remaining capsules.
     """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    currentPos = currentGameState.getPacmanPosition()
+    currentFood = currentGameState.getFood().asList()
+    currentGhost = currentGameState.getGhostStates()
+    currentCapsule = currentGameState.getCapsules()
+
+    score = currentGameState.getScore()
+    
+    for ghost in currentGhost:
+        ghostPos = ghost.getPosition()
+        ghostDist = util.manhattanDistance(ghostPos, currentPos)
+        scaredTime = ghost.scaredTimer
+        # be afraid (not scared, close ghost)
+        if scaredTime < 2 and ghostDist < 2:
+            return -9999
+        # don't be afraid (ghosts are scared, location doesn't matter)
+        if scaredTime >= 2:
+            score += 100
+                
+    minFood = 9999
+    count = 0
+    for food in currentFood:
+        foodDist = util.manhattanDistance(food, currentPos)
+        if foodDist < minFood:
+            minFood = foodDist
+        count += 1
+    score -= count
+    score += 1/minFood
+
+    if len(currentCapsule) > 0:
+        score += 1/len(currentCapsule)
+
+    return score
 
 # Abbreviation
 better = betterEvaluationFunction
