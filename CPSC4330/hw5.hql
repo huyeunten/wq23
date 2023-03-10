@@ -22,18 +22,19 @@ LOAD DATA INPATH '/user/hive/warehouse/dualcore.db/loyalty_program/loyalty_data.
     INTO TABLE loyalty_program;
 
 -- 3. Select home phone number from customer 1200866
+-- 408-555-4914
 SELECT  phone_number["HOME"]
     FROM    loyalty_program
     WHERE   cust_id = 1200866;
--- 408-555-4914
 
 -- 4. Select 3rd element of order IDs from customer 1200866
+-- 5278505
 SELECT  past_orders[2]
     FROM    loyalty_program
     WHERE   cust_id = 1200866;
--- 5278505
 
 -- 5. Number of products bought by customer 1071189
+-- 20
 SELECT  count(d.prod_id)
     FROM    customers c
     JOIN    orders o
@@ -41,19 +42,22 @@ SELECT  count(d.prod_id)
     JOIN    order_details d
         ON  (o.order_id = d.order_id)
     WHERE   c.cust_id = 1071189;
--- 20
 
--- 6. Number of customers who spent more than 300000 total ????
-SELECT  c.cust_id
-    FROM    customers c
-    JOIN    orders o
-        ON  (c.cust_id = o.cust_id)
-    JOIN    order_details d
-        ON  (o.order_id = d.order_id)
-    JOIN    products p
-        ON (d.prod_id = p.prod_id)
-    GROUP BY c.cust_id
-    HAVING   sum(p.price) > 300000;
+-- 6. Number of customers who spent more than 300000 total
+-- 16852
+SELECT count(cust_id)
+    FROM (
+        SELECT  c.cust_id
+            FROM    customers c
+            JOIN    orders o
+                ON  (c.cust_id = o.cust_id)
+            JOIN    order_details d
+                ON  (o.order_id = d.order_id)
+            JOIN    products p
+                ON (d.prod_id = p.prod_id)
+            GROUP BY c.cust_id
+            HAVING   sum(p.price) > 300000
+        ) totalPrice;
 
 -- 7. Customers who have not placed an order
 SELECT  c.cust_id
@@ -64,13 +68,13 @@ SELECT  c.cust_id
 
 -- 8. Product with lowest average rating from
 -- products with at least 50 ratings
+-- 1274673
 SELECT  prod_id
     FROM        ratings
     GROUP BY    prod_id
     HAVING      count(rating) > 50
     ORDER BY    avg(rating) ASC
     LIMIT 1;
--- 1274673
 
 -- 9. Five most common trigrams from rating messages
 SELECT  EXPLODE(NGRAMS(SENTENCES(LOWER(message)), 3, 5))
